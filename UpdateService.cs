@@ -76,6 +76,31 @@ internal static class UpdateService
         "PCMedicSuite",
         "updates");
 
+    /// <summary>
+    /// True when running from an installed location (Program Files) rather than a portable
+    /// folder. Installed copies update by running the release's installer package; portable
+    /// copies update by swapping files in place.
+    /// </summary>
+    public static bool IsInstalled =>
+        IsUnder(AppContext.BaseDirectory, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)) ||
+        IsUnder(AppContext.BaseDirectory, Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
+
+    private static bool IsUnder(string path, string root)
+    {
+        string trimmed = root.TrimEnd(Path.DirectorySeparatorChar);
+        return trimmed.Length > 0 &&
+               path.StartsWith(trimmed + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Setup executables, *install* packages and MSIs are installers, not portable payloads.</summary>
+    internal static bool IsInstallerPackage(string name)
+    {
+        string key = name.ToLowerInvariant();
+        return key.EndsWith(".msi", StringComparison.Ordinal) ||
+               key.Contains("setup", StringComparison.Ordinal) ||
+               key.Contains("install", StringComparison.Ordinal);
+    }
+
     public static async Task<SelfUpdateInfo> CheckAsync()
     {
         string current = CurrentVersion;
@@ -227,13 +252,14 @@ internal static class UpdateService
 
                 if (name.Length == 0 || url.Length == 0) continue;
                 if (!name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) &&
-                    !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+                    !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+                    !name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)) continue;
 
-                // Installer packages can't be swapped in place — only the portable payload is.
-                if (name.Contains("setup", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("install", StringComparison.OrdinalIgnoreCase)) continue;
+                // Installed copies take the release's installer; portable copies take the payload.
+                bool installer = IsInstallerPackage(name);
+                if (IsInstalled != installer) continue;
 
-                int rank = AssetRank(name);
+                int rank = installer ? InstallerRank(name) : AssetRank(name);
                 if (rank >= bestRank) continue;
 
                 bestRank = rank;
@@ -245,7 +271,16 @@ internal static class UpdateService
         return Describe(current, Normalise(tag), assetUrl, assetName, body);
     }
 
-    /// <summary>Lower wins: the portable zip, then a bare exe, then any other package. MSI installers are skipped — they cannot be swapped in place.</summary>
+    /// <summary>Lower wins for installed copies: the Inno setup exe, then an MSI, then anything else.</summary>
+    private static int InstallerRank(string name)
+    {
+        string key = name.ToLowerInvariant();
+        if (key.Contains("setup")) return 0;
+        if (key.EndsWith(".msi", StringComparison.Ordinal)) return 1;
+        return 2;
+    }
+
+    /// <summary>Lower wins for portable copies: the portable zip, then a bare exe, then any other package.</summary>
     private static int AssetRank(string name)
     {
         string key = name.ToLowerInvariant().Replace("-", string.Empty).Replace(" ", string.Empty);
@@ -317,13 +352,18 @@ internal static class UpdateService
 
     /// <summary>
     /// Starts the swap script and returns; the caller must exit so the executable unlocks.
+    /// Installer packages (setup exe / MSI) run elevated after exit instead of file-swapping.
     /// </summary>
-    public static (bool Ok, string Message) Install(string archivePath, bool restart = true)
+    public static (bool Ok, string Message) Install(string packagePath, bool restart = true)
     {
         try
         {
+            bool installerPackage = IsInstallerPackage(Path.GetFileName(packagePath));
             string script = Path.Combine(Path.GetTempPath(), $"pcmedic-update-{Guid.NewGuid():N}.ps1");
-            File.WriteAllText(script, BuildInstallScript(archivePath, AppContext.BaseDirectory, Environment.ProcessId, restart));
+            string body = installerPackage
+                ? BuildInstallerScript(packagePath, AppContext.BaseDirectory, Environment.ProcessId, restart)
+                : BuildInstallScript(packagePath, AppContext.BaseDirectory, Environment.ProcessId, restart);
+            File.WriteAllText(script, body);
 
             var start = new ProcessStartInfo
             {
@@ -334,12 +374,48 @@ internal static class UpdateService
             };
 
             Process.Start(start);
-            return (true, "Update unpacked by the installer \u2014 PC Medic will reopen.");
+            return (true, installerPackage
+                ? "Installer will run once PC Medic closes — approve the prompt to finish the update."
+                : "Update unpacked by the installer \u2014 PC Medic will reopen.");
         }
         catch (Exception ex)
         {
             return (false, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Waits for this process to exit, then runs the downloaded installer elevated:
+    /// Inno setup exes with /VERYSILENT, MSIs through msiexec /qn. Restarts the app afterwards.
+    /// </summary>
+    internal static string BuildInstallerScript(string packagePath, string appDirectory, int pid, bool restart)
+    {
+        string package = packagePath.Replace("'", "''");
+        string target = appDirectory.TrimEnd(Path.DirectorySeparatorChar).Replace("'", "''");
+        bool msi = packagePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase);
+
+        var script = new StringBuilder();
+        script.AppendLine("$ErrorActionPreference = 'Stop'");
+        script.AppendLine("$processId = " + pid);
+        script.AppendLine("while (Get-Process -Id $processId -ErrorAction SilentlyContinue) { Start-Sleep -Milliseconds 400 }");
+        script.AppendLine("Start-Sleep -Milliseconds 900");
+
+        if (msi)
+        {
+            script.AppendLine("Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i','\"" + package + "\"','/qn','/norestart' -Verb RunAs -Wait");
+        }
+        else
+        {
+            script.AppendLine("Start-Process -FilePath '\"" + package + "\"' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SUPPRESSAPPVERSION' -Verb RunAs -Wait");
+        }
+
+        if (restart)
+        {
+            script.AppendLine("Start-Process -FilePath (Join-Path '" + target + "' 'PCMedicSuite.exe') -WorkingDirectory '" + target + "'");
+        }
+
+        script.AppendLine("Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue");
+        return script.ToString();
     }
 
     /// <summary>The script waits for this process to exit, unpacks, copies and optionally restarts.</summary>
