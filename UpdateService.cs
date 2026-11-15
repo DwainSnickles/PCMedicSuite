@@ -229,6 +229,10 @@ internal static class UpdateService
                 if (!name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) &&
                     !name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
 
+                // Installer packages can't be swapped in place — only the portable payload is.
+                if (name.Contains("setup", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("install", StringComparison.OrdinalIgnoreCase)) continue;
+
                 int rank = AssetRank(name);
                 if (rank >= bestRank) continue;
 

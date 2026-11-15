@@ -10,3 +10,10 @@ obj/
 x64/
 x86/
 *.log
+
+# Installer build output (artifacts ship via GitHub Releases)
+Installer/Portable/
+Installer/Setup/*.exe
+Installer/Setup/*.msi
+Installer/Setup/*.zip
+Installer/Setup/*.wixpdb
