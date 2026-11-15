@@ -38,4 +38,7 @@ RestartApplications=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\Portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Disk Defrag ships as DiskDefrag.dll only — DefragPage hosts its form in-process.
+; The standalone DiskDefrag.exe/runtimeconfig are excluded so it isn't a second program.
+Source: "..\Portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; \
+    Excludes: "DiskDefrag.exe,DiskDefrag.runtimeconfig.json,DiskDefrag.runtimeconfig.dev.json"
