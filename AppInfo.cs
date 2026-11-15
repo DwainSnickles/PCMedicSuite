@@ -38,12 +38,12 @@ internal static class AppInfo
         "Foundation. It comes with ABSOLUTELY NO WARRANTY.";
 
     public const string GitHubOwner = "DwainSnickles";
-    public const string GitHubRepo = "PC-Medic";
+    public const string GitHubRepo = "PCMedicSuite";
 
-    public const string WebsiteUrl = "https://github.com/DwainSnickles/PC-Medic";
-    public const string ProductUrl = "https://github.com/DwainSnickles/PC-Medic/releases";
-    public const string SourceUrl = "https://github.com/DwainSnickles/PC-Medic";
-    public const string IssuesUrl = "https://github.com/DwainSnickles/PC-Medic/issues";
+    public const string WebsiteUrl = "https://github.com/DwainSnickles/PCMedicSuite";
+    public const string ProductUrl = "https://github.com/DwainSnickles/PCMedicSuite/releases";
+    public const string SourceUrl = "https://github.com/DwainSnickles/PCMedicSuite";
+    public const string IssuesUrl = "https://github.com/DwainSnickles/PCMedicSuite/issues";
 
     public static readonly Credit Licence = new(LicenceName, "GPL-3.0", LicenceUrl);
 

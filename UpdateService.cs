@@ -241,16 +241,15 @@ internal static class UpdateService
         return Describe(current, Normalise(tag), assetUrl, assetName, body);
     }
 
-    /// <summary>Lower wins: the single-app zip, then a bare exe, then the suite zip, then any other package.</summary>
+    /// <summary>Lower wins: the portable zip, then a bare exe, then any other package. MSI installers are skipped — they cannot be swapped in place.</summary>
     private static int AssetRank(string name)
     {
         string key = name.ToLowerInvariant().Replace("-", string.Empty).Replace(" ", string.Empty);
         bool zip = key.EndsWith(".zip", StringComparison.Ordinal);
         bool ours = key.Contains("pcmedic");
 
-        if (zip && ours && !key.Contains("suite")) return 0;
-        if (!zip && ours) return 1;
-        if (zip && ours) return 2;
+        if (zip && ours) return key.Contains("portable") ? 0 : 1;
+        if (!zip && ours) return 2;
         if (zip) return 3;
         return 4;
     }
