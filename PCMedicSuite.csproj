@@ -1,0 +1,90 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>PC_Medic</RootNamespace>
+    <AssemblyName>PCMedicSuite</AssemblyName>
+    <Version>1.4.0</Version>
+    <Product>PC Medic</Product>
+    <Authors>DwainSnickles</Authors>
+    <Company>DwainSnickles</Company>
+    <Description>Portable Windows system optimizer and PC cleaner - no service, no installer, no telemetry, no subscription.</Description>
+    <Copyright>Copyright © DwainSnickles</Copyright>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>pcmedic.ico</ApplicationIcon>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autoupdater.NET.Official" Version="1.9.3" />
+  </ItemGroup>
+
+  <!-- Build the companion from source and host its form inside the console. The project lives in
+       its own repo, so CI passes the checkout it fetched instead of the sibling folder. -->
+  <PropertyGroup>
+    <DiskDefragProject Condition="'$(DiskDefragProject)' == ''">..\DiskDefrag\DiskDefrag.csproj</DiskDefragProject>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(DiskDefragProject)')">
+    <ProjectReference Include="$(DiskDefragProject)" />
+  </ItemGroup>
+
+  <Target Name="RequireDiskDefrag" BeforeTargets="CoreCompile">
+    <Error Condition="!Exists('$(DiskDefragProject)')"
+           Text="Disk Defrag project not found at '$(DiskDefragProject)'. Clone it beside this repo or pass -p:DiskDefragProject=&lt;path&gt;." />
+  </Target>
+
+  <!-- Disk Defrag is a separate project living in its own folder. -->
+  <ItemGroup>
+    <Compile Remove="DiskDefrag\**" />
+    <EmbeddedResource Remove="DiskDefrag\**" />
+    <None Remove="DiskDefrag\**" />
+    <Compile Remove="companion\**" />
+    <EmbeddedResource Remove="companion\**" />
+    <None Remove="companion\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\catalogue.json" />
+    <EmbeddedResource Include="Assets\catalogue.json" />
+    <!-- Launch artwork travels inside the exe, so a portable copy still shows it. -->
+    <None Remove="Assets\brand-hero.png" />
+    <EmbeddedResource Include="Assets\brand-hero.png" />
+    <!-- One screenshot per help topic, embedded so the manual travels inside the exe. -->
+    <None Remove="Assets\help\*.png" />
+    <EmbeddedResource Include="Assets\help\*.png"
+                      LogicalName="PC_Medic.Assets.help.%(Filename)%(Extension)" />
+    <!-- The Windows RE menu travels inside the exe, so a stick is always stamped with the same one. -->
+    <None Remove="Assets\recovery\restore.cmd" />
+    <EmbeddedResource Include="Assets\recovery\restore.cmd"
+                      LogicalName="PC_Medic.Assets.recovery.restore.cmd" />
+  </ItemGroup>
+
+  <!-- wimlib-imagex engine for the Backup & Restore page: bundled binaries land in bin\ next to the exe. -->
+  <ItemGroup>
+    <None Update="tools\wimlib-imagex.exe" CopyToOutputDirectory="PreserveNewest" TargetPath="bin\wimlib-imagex.exe" />
+    <None Update="tools\libwim-15.dll" CopyToOutputDirectory="PreserveNewest" TargetPath="bin\libwim-15.dll" />
+    <None Update="tools\wim_exclusions.ini" CopyToOutputDirectory="PreserveNewest" TargetPath="bin\wim_exclusions.ini" />
+  </ItemGroup>
+
+  <!-- Ship the Disk Defrag build that sits beside this project, so the companion is never a stale copy. -->
+  <Target Name="SyncDiskDefrag" AfterTargets="Build"
+          Condition="Exists('$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.exe')">
+    <ItemGroup>
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.exe" />
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.dll" />
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.pdb" />
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.deps.json" />
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.runtimeconfig.json" />
+      <DiskDefragCompanion Include="$(MSBuildProjectDirectory)/../DiskDefrag/bin/$(Configuration)/net10.0-windows/DiskDefrag.runtimeconfig.dev.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DiskDefragCompanion)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="Disk Defrag companion synced from ../DiskDefrag/bin/$(Configuration)." />
+  </Target>
+
+</Project>

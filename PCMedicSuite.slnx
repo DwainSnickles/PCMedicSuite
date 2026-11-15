@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PCMedicSuite.csproj" />
+  <Project Path="../DiskDefrag/DiskDefrag.csproj" />
+</Solution>
