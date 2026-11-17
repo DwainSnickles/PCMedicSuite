@@ -7,8 +7,8 @@ $setupDir = Join-Path $installerDir 'Setup'
 $projectFile = Join-Path $projectDir 'PCMedicSuite.csproj'
 $wxsFile = Join-Path $setupDir 'PCMedicSuite.wxs'
 $issFile = Join-Path $setupDir 'PCMedicSuite.iss'
-$setupExe = Join-Path $setupDir 'PCMedicSuite-Setup-1.4.0-x64.exe'
-$msiFile = Join-Path $setupDir 'PCMedicSuite-1.4.0-x64.msi'
+$setupExe = Join-Path $setupDir 'PCMedicSuite-Setup-1.5.0-x64.exe'
+$msiFile = Join-Path $setupDir 'PCMedicSuite-1.5.0-x64.msi'
 
 New-Item -ItemType Directory -Force -Path $portableDir, $setupDir | Out-Null
 

@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="PC Medic Suite"
            Manufacturer="DwainSnickles"
-           Version="1.4.0.0"
+           Version="1.5.0.0"
            UpgradeCode="68F2C8A7-EF89-40D8-A743-0B1A061DAD4A"
            Scope="perMachine">
     <MajorUpgrade DowngradeErrorMessage="A newer version of PC Medic Suite is already installed." />
