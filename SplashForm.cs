@@ -179,7 +179,7 @@ internal sealed partial class SplashForm : Form
 
         TextRenderer.DrawText(
             g,
-            "PORTABLE BUILD 1.0",
+            $"PORTABLE BUILD {AppInfo.CurrentVersionText}",
             Theme.Kicker,
             new Rectangle(left, statusTop, right - left, 14),
             Theme.TextDim,
