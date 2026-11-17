@@ -196,12 +196,14 @@ partial class MainForm
         _tagline.Location = new Point(72, 48);
         _tagline.Text = "SYSTEM OPTIMIZER";
 
+        // Big enough to read from across a desk, and the accent rather than the dim grey the rest of
+        // the fine print uses: this is the line people quote when they report a problem.
         _build.AutoSize = true;
         _build.BackColor = Color.Transparent;
-        _build.Font = Theme.Kicker;
-        _build.ForeColor = Theme.TextDim;
-        _build.Location = new Point(22, 70);
-        _build.Text = "PORTABLE 1.0";
+        _build.Font = new Font(Theme.Mono.FontFamily, 10f, FontStyle.Bold);
+        _build.ForeColor = Theme.Accent;
+        _build.Location = new Point(22, 68);
+        _build.Text = "PORTABLE " + AppInfo.CurrentVersionText;
 
         _sidebarDivider.BackColor = Theme.Border;
         _sidebarDivider.Location = new Point(22, 90);

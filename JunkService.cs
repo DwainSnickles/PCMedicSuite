@@ -38,36 +38,49 @@ internal static class JunkService
     private static readonly string LocalAppData =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-    public static List<JunkTarget> Scan()
+    /// <summary>
+    /// Measures every category in order, reporting each finished one so the caller can show a real
+    /// percentage: eight categories is an honest denominator, unlike a timer pretending to be progress.
+    /// </summary>
+    public static List<JunkTarget> Scan(IProgress<ScanProgress>? progress = null)
     {
-        var targets = new List<JunkTarget>
-        {
-            new("temp", "TEMPORARY FILES",
-                "Setup leftovers and app temp files older than ten minutes.",
-                false, TempSize(), TempFileCount(), TempAccessible()),
-            new("winupdate", "WINDOWS UPDATE CACHE",
-                "Installer packages Windows Update already applied.",
-                true, DirSize(WinUpdateDir()), DirFileCount(WinUpdateDir()), DirAccessible(WinUpdateDir())),
-            new("recyclebin", "RECYCLE BIN",
-                "Everything already deleted but not yet purged.",
-                false, RecycleBinSize(), 0, true),
-            new("thumbcache", "THUMBNAIL & ICON CACHE",
-                "Explorer's picture and icon caches; they rebuild themselves.",
-                false, ThumbCacheSize(), ThumbCacheFiles().Length, ThumbCacheFiles().Length > 0),
-            new("shadercache", "SHADER CACHE",
-                "DirectX and GPU shader caches; they rebuild on next launch.",
-                false, SumDirSize(ShaderCacheDirs()), SumDirFileCount(ShaderCacheDirs()), DirsAccessible(ShaderCacheDirs())),
-            new("browsercache", "BROWSER CACHES",
-                "Chrome, Edge and Firefox cache folders. Close the browser for a full clean.",
-                false, SumDirSize(BrowserCacheDirs()), SumDirFileCount(BrowserCacheDirs()), DirsAccessible(BrowserCacheDirs())),
-            new("windowslogs", "WINDOWS LOGS",
-                "Setup, servicing and system logs under C:\\Windows\\Logs.",
-                true, DirSize(WinLogsDir()), DirFileCount(WinLogsDir()), DirAccessible(WinLogsDir())),
-            new("deliveryopt", "DELIVERY OPTIMIZATION",
-                "Update files Windows shares between PCs on this network.",
-                true, DirSize(DeliveryOptDir()), DirFileCount(DeliveryOptDir()), DirAccessible(DeliveryOptDir())),
-        };
+        var targets = new List<JunkTarget>(8);
 
+        void Add(string id, string name, string description, bool admin, Func<(ulong Bytes, int Files, bool Accessible)> measure)
+        {
+            progress?.Report(new ScanProgress(
+                (int)Math.Round(targets.Count * 100.0 / 8), $"SCANNING {name}", targets.Count + 1, 8));
+
+            (ulong bytes, int files, bool accessible) = measure();
+            targets.Add(new JunkTarget(id, name, description, admin, bytes, files, accessible));
+        }
+
+        Add("temp", "TEMPORARY FILES",
+            "Setup leftovers and app temp files older than ten minutes.",
+            false, () => (TempSize(), TempFileCount(), TempAccessible()));
+        Add("winupdate", "WINDOWS UPDATE CACHE",
+            "Installer packages Windows Update already applied.",
+            true, () => (DirSize(WinUpdateDir()), DirFileCount(WinUpdateDir()), DirAccessible(WinUpdateDir())));
+        Add("recyclebin", "RECYCLE BIN",
+            "Everything already deleted but not yet purged.",
+            false, () => (RecycleBinSize(), 0, true));
+        Add("thumbcache", "THUMBNAIL & ICON CACHE",
+            "Explorer's picture and icon caches; they rebuild themselves.",
+            false, () => (ThumbCacheSize(), ThumbCacheFiles().Length, ThumbCacheFiles().Length > 0));
+        Add("shadercache", "SHADER CACHE",
+            "DirectX and GPU shader caches; they rebuild on next launch.",
+            false, () => (SumDirSize(ShaderCacheDirs()), SumDirFileCount(ShaderCacheDirs()), DirsAccessible(ShaderCacheDirs())));
+        Add("browsercache", "BROWSER CACHES",
+            "Chrome, Edge and Firefox cache folders. Close the browser for a full clean.",
+            false, () => (SumDirSize(BrowserCacheDirs()), SumDirFileCount(BrowserCacheDirs()), DirsAccessible(BrowserCacheDirs())));
+        Add("windowslogs", "WINDOWS LOGS",
+            "Setup, servicing and system logs under C:\\Windows\\Logs.",
+            true, () => (DirSize(WinLogsDir()), DirFileCount(WinLogsDir()), DirAccessible(WinLogsDir())));
+        Add("deliveryopt", "DELIVERY OPTIMIZATION",
+            "Update files Windows shares between PCs on this network.",
+            true, () => (DirSize(DeliveryOptDir()), DirFileCount(DeliveryOptDir()), DirAccessible(DeliveryOptDir())));
+
+        progress?.Report(new ScanProgress(100, "SCAN COMPLETE", 8, 8));
         return targets;
     }
 

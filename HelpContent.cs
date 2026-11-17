@@ -514,9 +514,12 @@ internal static class HelpContent
                     "the Recycle Bin wherever Windows allows it, a wrong tick is recoverable, and files held open by a running " +
                     "program are skipped rather than forced. The Recycle Bin row itself is purged with Clear-RecycleBin, which " +
                     "clears every user's bin on the machine."),
-                new HelpSection("THE RESULT LINE",
-                    "FREED, removed, skipped (in use), deleted on reboot and failed counts are reported, and the scan re-runs " +
-                    "afterwards so the sizes on screen are current. Each category also writes its own line to the activity feed."),
+                new HelpSection("THE RESULT WINDOW",
+                    "A ring reports both passes \u2014 a percentage while it scans the eight categories, and again while it cleans. " +
+                    "When the clean finishes, a results window adds the pass up: bytes freed, items removed, files held open by a " +
+                    "running app and what is queued for the next boot, with one line per category so a row that did nothing is " +
+                    "visible. The scan re-runs behind it and leaves every row unticked; tick what remains to try the locked files " +
+                    "again. Each category also writes its own line to the activity feed."),
                 new HelpSection("WHAT IT WILL NOT TOUCH",
                     "Only caches, logs and already-deleted items: no documents, no program files, nothing in a user's profile " +
                     "outside the caches. Deleting logs is genuinely lossy for troubleshooting, so leave WINDOWS LOGS ticked off while " +
