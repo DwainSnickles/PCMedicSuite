@@ -351,7 +351,10 @@ internal sealed partial class SoftwarePage : PageBase
             {
                 if (control is Label label)
                 {
+                    // Behind the buttons, always: the label is transparent, so a width that is one
+                    // relayout out of date would otherwise paint the toolbar's surface over a caption.
                     label.SetBounds(0, 8, Math.Max(60, plateLeft - 12), 18);
+                    label.SendToBack();
                 }
                 else if (control is Panel host)
                 {
@@ -359,6 +362,11 @@ internal sealed partial class SoftwarePage : PageBase
                 }
             }
         }
+
+        // A button that only appears mid-run (CANCEL, SELECT ALL, the offline switch) used to keep the
+        // label at the width it had before, because nothing re-ran the layout for it.
+        foreach (Control button in rightButtons)
+            button.VisibleChanged += (_, _) => Layout();
 
         toolbar.Resize += (_, _) => Layout();
         _toolbarLayouts.Add(Layout);

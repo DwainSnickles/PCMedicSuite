@@ -122,7 +122,7 @@ internal sealed partial class SelfUpdateForm : Form
         _install.Enabled = false;
         SetStatus($"Checking {UpdateService.FeedHost}\u2026", Theme.TextDim);
         using IDisposable busy = Busy.Enter(this);
-        using IDisposable plate = _loading.Busy();
+        using IDisposable plate = ShowPlate();
 
         SelfUpdateInfo info = await UpdateService.CheckAsync();
         if (IsDisposed) return;
@@ -152,7 +152,7 @@ internal sealed partial class SelfUpdateForm : Form
         _install.Enabled = false;
         SetStatus("Downloading the package\u2026", Theme.TextDim);
         using IDisposable busy = Busy.Enter(this);
-        using IDisposable plate = _loading.Busy();
+        using IDisposable plate = ShowPlate();
 
         var progress = new Progress<string>(text => SetStatus($"Downloading {text}", Theme.TextDim));
         (bool ok, string path, string message) = await UpdateService.DownloadAsync(info, progress);
@@ -183,6 +183,48 @@ internal sealed partial class SelfUpdateForm : Form
 
         await Task.Delay(700);
         Application.Exit();
+    }
+
+    /// <summary>
+    /// Raises the busy plate for the life of the returned scope. The release-notes well is hidden for
+    /// the same span: the plate is drawn over that rectangle, and two overlapping siblings leave the
+    /// result to z-order, which is how the well ended up covering all but a sliver of the ring.
+    /// </summary>
+    private IDisposable ShowPlate()
+    {
+        // Everything the plate is drawn over steps aside, so the ring never lands on a chip edge and
+        // the outcome cannot depend on which sibling happens to be in front.
+        Control[] underneath = { _currentLabel, _currentChip, _latestLabel, _latestChip, _notesWell };
+        foreach (Control control in underneath) control.Visible = false;
+
+        IDisposable plate = _loading.Busy();
+        return new PlateScope(this, plate, underneath);
+    }
+
+    private sealed class PlateScope : IDisposable
+    {
+        private readonly SelfUpdateForm _owner;
+        private readonly IDisposable _plate;
+        private readonly Control[] _restore;
+        private bool _released;
+
+        public PlateScope(SelfUpdateForm owner, IDisposable plate, Control[] restore)
+        {
+            _owner = owner;
+            _plate = plate;
+            _restore = restore;
+        }
+
+        public void Dispose()
+        {
+            if (_released) return;
+            _released = true;
+
+            _plate.Dispose();
+            if (_owner.IsDisposed) return;
+
+            foreach (Control control in _restore) control.Visible = true;
+        }
     }
 
     private void SetStatus(string text, Color tone)

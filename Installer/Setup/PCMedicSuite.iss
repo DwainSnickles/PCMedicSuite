@@ -4,7 +4,7 @@
 
 #define AppName "PC Medic Suite"
 #define AppExe "PCMedicSuite.exe"
-#define AppVersion "1.5.0"
+#define AppVersion "1.5.1"
 #define AppPublisher "DwainSnickles"
 #define AppId "{{8E4B7C2A-3D5F-4E6A-9B1C-2F7D8E5A6C3B}"
 
