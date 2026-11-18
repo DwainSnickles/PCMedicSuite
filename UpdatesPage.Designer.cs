@@ -40,6 +40,7 @@ partial class UpdatesPage
         _appsToolbar = new Panel();
         _apps = new BufferedPanel();
         _appsLoading = new ScanOverlay();
+        _appsLoading.Circular = true;
         _appStatus = new Label();
         _scanApps = new NeonButton();
         _downloadApps = new NeonButton();
@@ -48,6 +49,7 @@ partial class UpdatesPage
         _driversToolbar = new Panel();
         _drivers = new BufferedPanel();
         _driversLoading = new ScanOverlay();
+        _driversLoading.Circular = true;
         _driverStatus = new Label();
         _scanDrivers = new NeonButton();
         _downloadDrivers = new NeonButton();
@@ -114,7 +116,7 @@ partial class UpdatesPage
         _appStatus.Font = Theme.MonoSmall;
         _appStatus.ForeColor = Theme.TextDim;
         _appStatus.Location = new Point(0, 8);
-        _appStatus.Size = new Size(210, 18);
+        _appStatus.Size = new Size(136, 18);
         _appStatus.TextAlign = ContentAlignment.MiddleLeft;
 
         _scanApps.Height = 28;
@@ -170,7 +172,7 @@ partial class UpdatesPage
         _driverStatus.Font = Theme.MonoSmall;
         _driverStatus.ForeColor = Theme.TextDim;
         _driverStatus.Location = new Point(0, 8);
-        _driverStatus.Size = new Size(210, 18);
+        _driverStatus.Size = new Size(168, 18);
         _driverStatus.TextAlign = ContentAlignment.MiddleLeft;
 
         _scanDrivers.Height = 28;

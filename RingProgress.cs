@@ -145,15 +145,31 @@ internal sealed class RingProgress : SkinnedControl
             Theme.Edge,
             Tone);
 
+        Draw(g, ClientRectangle, _shown, _caption, Tone, _indeterminate, _sweep);
+    }
+
+    /// <summary>
+    /// Paints the ring, its number and its caption inside <paramref name="area"/>. Kept static so the
+    /// update plates (<see cref="ScanOverlay"/>) draw the same ring instead of a second copy of it.
+    /// </summary>
+    internal static void Draw(
+        Graphics g,
+        RectangleF area,
+        double shown,
+        string caption,
+        Color tone,
+        bool indeterminate,
+        float sweep)
+    {
         const int CaptionBand = 22;
-        int size = Math.Min(Width - 40, Height - CaptionBand - 24);
+        int size = (int)Math.Min(area.Width - 40, area.Height - CaptionBand - 24);
         if (size < 44) return;
 
         float thickness = Math.Max(5f, size * 0.085f);
         float inset = thickness / 2f;
         var ring = new RectangleF(
-            (Width - size) / 2f + inset,
-            12f + inset,
+            area.X + ((area.Width - size) / 2f) + inset,
+            area.Y + 12f + inset,
             size - thickness,
             size - thickness);
 
@@ -162,34 +178,34 @@ internal sealed class RingProgress : SkinnedControl
             g.DrawEllipse(track, ring);
         }
 
-        using (var glow = new SolidBrush(Theme.Alpha(Tone, 10)))
+        using (var glow = new SolidBrush(Theme.Alpha(tone, 10)))
         {
             g.FillEllipse(glow, RectangleF.Inflate(ring, -inset, -inset));
         }
 
-        float start = _indeterminate ? -90f + (_sweep * 360f) : -90f;
-        float sweep = _indeterminate ? 96f : (float)(_shown * 3.6);
-        if (sweep > 0.2f)
+        float start = indeterminate ? -90f + (sweep * 360f) : -90f;
+        float lit = indeterminate ? 96f : (float)(shown * 3.6);
+        if (lit > 0.2f)
         {
-            using var arc = new Pen(Tone, thickness) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            g.DrawArc(arc, ring, start, Math.Min(sweep, 359.5f));
+            using var arc = new Pen(tone, thickness) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            g.DrawArc(arc, ring, start, Math.Min(lit, 359.5f));
         }
 
-        string value = _indeterminate ? "\u2014" : $"{(int)Math.Round(_shown)}%";
+        string value = indeterminate ? "\u2014" : $"{(int)Math.Round(shown)}%";
         TextRenderer.DrawText(
             g,
             value,
             Theme.Numeric,
-            new Rectangle(0, (int)ring.Top, Width, (int)ring.Height),
-            _indeterminate ? Theme.TextDim : Theme.Text,
+            new Rectangle((int)area.X, (int)ring.Top, (int)area.Width, (int)ring.Height),
+            indeterminate ? Theme.TextDim : Theme.Text,
             Centered);
 
         TextRenderer.DrawText(
             g,
-            _caption.ToUpperInvariant(),
+            caption.ToUpperInvariant(),
             Theme.Kicker,
-            new Rectangle(10, Height - CaptionBand - 4, Width - 20, 16),
-            _indeterminate ? Theme.Accent : Theme.TextDim,
+            new Rectangle((int)area.X + 10, (int)area.Bottom - CaptionBand - 4, (int)area.Width - 20, 16),
+            indeterminate ? tone : Theme.TextDim,
             Centered);
     }
 }

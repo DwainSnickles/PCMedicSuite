@@ -60,6 +60,7 @@ partial class SoftwarePage
         _updatesToolbar = new Panel();
         _updatesList = new BufferedPanel();
         _updatesOverlay = new ScanOverlay();
+        _updatesOverlay.Circular = true;
         _updateStatus = new Label();
         _securityOnly = new NeonButton();
         _selectAll = new NeonButton();
@@ -72,6 +73,7 @@ partial class SoftwarePage
         _installedToolbar = new Panel();
         _installedList = new BufferedPanel();
         _installedOverlay = new ScanOverlay();
+        _installedOverlay.Circular = true;
         _installedStatus = new Label();
         _searchHost = new Panel();
         _searchIcon = new Label();

@@ -61,6 +61,12 @@ internal sealed partial class UpdatesPage : PageBase
         _appStatus.Text = _winget is null ? "WINGET NOT FOUND" : "NOT SCANNED";
         _driverStatus.Text = "NOT SCANNED";
 
+        // The status labels are transparent and are added before the buttons, so they sat in front and
+        // painted the toolbar's own surface across the left of each button — it ate the start of the
+        // caption. Both now stop short of the first button, and the buttons sit in front regardless.
+        foreach (Control button in new Control[] { _downloadApps, _scanApps, _downloadDrivers, _offlineDrivers, _scanDrivers })
+            button.BringToFront();
+
         _scanApps.Click += (_, _) => _ = ReloadApps(announce: true);
         _scanDrivers.Click += (_, _) => ReloadDrivers(announce: true);
 

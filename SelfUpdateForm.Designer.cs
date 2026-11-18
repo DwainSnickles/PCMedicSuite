@@ -134,6 +134,7 @@ partial class SelfUpdateForm
         _close.Text = "CLOSE";
 
         _loading.Bounds = new Rectangle(12, 88, 536, 164);
+        _loading.Circular = true;
         _loading.Visible = false;
 
         Controls.Add(_kicker);

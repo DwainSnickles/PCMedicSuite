@@ -11,11 +11,32 @@ internal sealed class ScanOverlay : SkinnedControl
     private readonly System.Windows.Forms.Timer _pulse = new() { Interval = 250 };
     private int _percent;
     private bool _pulsing;
+    private bool _circular;
+    private float _sweep;
 
     public ScanOverlay()
     {
         BackColor = Theme.Surface;
         _pulse.Tick += OnPulse;
+    }
+
+    /// <summary>
+    /// Draw the pass as the ring the rest of the suite uses instead of the flat bar. The update pages
+    /// want it because they report real percentages; the number silences the sweep the same way it
+    /// silences the estimate.
+    /// </summary>
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    public bool Circular
+    {
+        get => _circular;
+        set
+        {
+            _circular = value;
+
+            // A sweep has to look continuous; the bar only creeps, so it can tick slowly.
+            _pulse.Interval = value ? 40 : 250;
+            Invalidate();
+        }
     }
 
     /// <summary>A real percentage stops the estimate: whoever reports it knows better.</summary>
@@ -80,7 +101,18 @@ internal sealed class ScanOverlay : SkinnedControl
 
     private void OnPulse(object? sender, EventArgs e)
     {
-        if (!_pulsing || _percent >= 90) return;
+        if (!_pulsing) return;
+
+        // No denominator yet: the ring carries the movement on its own.
+        if (_circular)
+        {
+            _sweep += 0.022f;
+            if (_sweep > 1f) _sweep -= 1f;
+            Invalidate();
+            return;
+        }
+
+        if (_percent >= 90) return;
 
         int next = _percent + Math.Max(1, (int)((90 - _percent) * 0.04));
         SetPercent(Math.Min(next, 90));
@@ -102,6 +134,12 @@ internal sealed class ScanOverlay : SkinnedControl
         using (var plate = new SolidBrush(BackColor))
         {
             g.FillRectangle(plate, ClientRectangle);
+        }
+
+        if (_circular)
+        {
+            RingProgress.Draw(g, ClientRectangle, _percent, "LOADING", Theme.Accent, _pulsing, _sweep);
+            return;
         }
 
         const int LineHeight = 34;
