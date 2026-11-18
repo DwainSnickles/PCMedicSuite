@@ -108,3 +108,9 @@ The PnP device audit and the offline driver repository are ported from
 [Hexnest](https://github.com/ahmetcaglayan/Hexnest), Copyright (c) 2026 Ahmet Çağlayan and Hexnest
 contributors, which is released under the MIT licence; that notice travels with the ported code in
 `DriverDevices.cs` and `DriverRepository.cs`.
+
+## Support this project
+
+If this project saved you some time, you can leave a tip at
+[ko-fi.com/dwainhsnickles](https://ko-fi.com/dwainhsnickles) (cards, no account needed) or
+[paypal.me/YTDPlatinum](https://paypal.me/YTDPlatinum). Bug reports and pull requests are welcome too.
